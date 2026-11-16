@@ -15,3 +15,4 @@ if delta <= L * 12 / 360:
     print("Deflection OK")
 else:
     print("Deflection too large - choose a stiffer beam")
+    x = 12
