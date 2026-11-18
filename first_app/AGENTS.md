@@ -11,6 +11,7 @@ Save every new file in the appropriate location:
 - `01_data/` for data files.
 - `02_validation/` for hand calculations and test cases.
 - `03_output/` for screenshots and exported results.
+- `specs/` for polished specifications and prompt drafts.
 
 Do not move the four root-level files into these folders.
 
