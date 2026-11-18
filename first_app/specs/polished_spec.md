@@ -120,6 +120,10 @@ sizing a floor beam or deck joist.
   as -3 ft. No other negative load position is accepted.
 - If the span is a prime whole number of feet, change the top-right oval
   from “BYU” to “Utah”. For a non-prime or non-integer span, show “BYU”.
+- Clicking the top-right oval opens a dropdown without a visible dropdown
+  indicator. It lists “Span = prime”, “End = -3”, “Magnitude = 3.14”, and
+  “Bending Strenght = 20.00”.
+- Show small “Click BYU” text at the bottom of the page.
 - Shape the beam drawing from the calculated deflection curve. Magnify the
   displacement for visibility and keep the load arrows attached to the
   deformed beam; retain a faint undeformed reference line.
@@ -133,3 +137,7 @@ sizing a floor beam or deck joist.
   not an arrow.
 - In cantilever mode, lower the beam, loads, support, reactions, and span
   scale to leave clear space for the fixed-end moment annotation above them.
+- When bending stress rounds to 20.00 ksi in the displayed result, play
+  multiple fireworks bursts over the page for seven seconds. Trigger them
+  when the value enters 20.00 and allow them to trigger again after leaving
+  that value.
