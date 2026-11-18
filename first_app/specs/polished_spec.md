@@ -102,7 +102,9 @@ sizing a floor beam or deck joist.
    fb = 13.47 ksi; max deflection 0.340 in at 8.82 ft.
 3. Cantilever, 10 ft, W12x26, point load 5 k at the free end: reaction
    5 k and fixed-end moment 50 kip-ft; max deflection 0.487 in at the free
-   end (PL^3/3EI); L/360 = 0.333 in, so deflection fails.
+   end (PL^3/3EI); L/360 = 0.333 in, so deflection fails. Visually, place
+   the cantilever beam drawing below the fixed-end moment annotation without
+   overlap.
 4. Simply supported 12 ft 2x10 joist, uniform 0.05 kip/ft: max moment
    0.90 kip-ft; fb = 0.505 ksi; max deflection 0.147 in; both pass.
 
@@ -129,3 +131,5 @@ sizing a floor beam or deck joist.
   fletching pairs. Place the second pair farther down the shaft at the same
   angle as the first. The 3.14 π-marker special case remains a character,
   not an arrow.
+- In cantilever mode, lower the beam, loads, support, reactions, and span
+  scale to leave clear space for the fixed-end moment annotation above them.
