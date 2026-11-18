@@ -1,24 +1,495 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Flow Converter</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concrete Slab Calculator</title>
   <style>
-    body { font-family: sans-serif; margin: 40px; }
-    input { width: 80px; }
+    :root {
+      --navy: #17324d;
+      --blue: #2878a9;
+      --blue-light: #dceaf3;
+      --ink: #1d2733;
+      --muted: #667483;
+      --line: #dbe3ea;
+      --surface: #ffffff;
+      --background: #f3f6f8;
+      --danger: #a63838;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--background);
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    header {
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      color: var(--navy);
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.78fr) minmax(420px, 1.22fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: 0 8px 24px rgba(23, 50, 77, 0.07);
+    }
+
+    .controls { padding: 22px; }
+
+    .controls h2,
+    .results h2 {
+      margin: 0 0 18px;
+      color: var(--navy);
+      font-size: 1.15rem;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field:last-child { margin-bottom: 0; }
+
+    .field-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    output {
+      color: var(--blue);
+      font-weight: 800;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--ink);
+      background: #fff;
+      font: inherit;
+    }
+
+    input[type="number"]:focus,
+    input[type="range"]:focus-visible {
+      outline: 3px solid rgba(40, 120, 169, 0.18);
+      border-color: var(--blue);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    .range-scale {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .results { overflow: hidden; }
+
+    .result-banner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .primary-result,
+    .cost-result {
+      padding: 22px;
+    }
+
+    .primary-result {
+      border-right: 1px solid var(--line);
+      background: linear-gradient(135deg, #f7fafc, #edf4f8);
+    }
+
+    .result-label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .primary-value {
+      color: var(--navy);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .cost-value {
+      color: var(--blue);
+      font-size: clamp(1.7rem, 4vw, 2.6rem);
+      font-weight: 800;
+    }
+
+    .diagram-section {
+      padding: 22px;
+    }
+
+    .diagram-wrap {
+      min-height: 280px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background:
+        linear-gradient(rgba(23, 50, 77, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(23, 50, 77, 0.035) 1px, transparent 1px),
+        #fbfdfe;
+      background-size: 20px 20px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 280px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--line);
+    }
+
+    .summary-item {
+      padding: 16px 18px;
+      border-right: 1px solid var(--line);
+    }
+
+    .summary-item:last-child { border-right: 0; }
+
+    .summary-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .summary-item strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--navy);
+      font-size: 1.05rem;
+    }
+
+    .error {
+      min-height: 20px;
+      margin: 12px 0 0;
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    [hidden] { display: none !important; }
+
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+      .controls { order: 1; }
+      .results { order: 2; }
+    }
+
+    @media (max-width: 520px) {
+      .page { padding: 20px 12px 32px; }
+      .result-banner { grid-template-columns: 1fr; }
+      .primary-result { border-right: 0; border-bottom: 1px solid var(--line); }
+      .summary { grid-template-columns: 1fr; }
+      .summary-item { border-right: 0; border-bottom: 1px solid var(--line); }
+      .summary-item:last-child { border-bottom: 0; }
+    }
   </style>
 </head>
 <body>
-  <h1>Flow Converter</h1>
-  <input id="cfs" type="number" value="1"> cfs
-  <button onclick="convert()">Convert</button>
-  <p id="result"></p>
+  <main class="page">
+    <header>
+      <h1>Concrete Slab Calculator</h1>
+      <p>Estimate ordered concrete volume and cost for a rectangular slab.</p>
+    </header>
+
+    <div class="layout">
+      <section class="card controls" aria-labelledby="inputs-heading">
+        <h2 id="inputs-heading">Slab inputs</h2>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="length">Length</label>
+          </div>
+          <input id="length" type="number" min="5" max="100" step="1" value="20" aria-describedby="length-unit">
+          <div id="length-unit" class="range-scale"><span>feet</span><span>5–100 ft</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="width">Width</label>
+          </div>
+          <input id="width" type="number" min="5" max="100" step="1" value="30" aria-describedby="width-unit">
+          <div id="width-unit" class="range-scale"><span>feet</span><span>5–100 ft</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="thickness">Thickness</label>
+            <output id="thickness-output" for="thickness">6 in</output>
+          </div>
+          <input id="thickness" type="range" min="4" max="12" step="0.5" value="6">
+          <div class="range-scale"><span>4 in</span><span>12 in</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="waste">Waste factor</label>
+            <output id="waste-output" for="waste">10%</output>
+          </div>
+          <input id="waste" type="range" min="0" max="20" step="1" value="10">
+          <div class="range-scale"><span>0%</span><span>20%</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="price">Concrete price</label>
+          </div>
+          <input id="price" type="number" min="50" max="300" step="0.01" value="150" aria-describedby="price-unit">
+          <div id="price-unit" class="range-scale"><span>dollars per cubic yard</span><span>$50–$300</span></div>
+        </div>
+
+        <p id="error" class="error" role="alert" aria-live="polite"></p>
+      </section>
+
+      <section class="card results" aria-labelledby="results-heading">
+        <div class="result-banner">
+          <div class="primary-result">
+            <span class="result-label">Concrete to order</span>
+            <div id="ordered-volume" class="primary-value">12.25 cu yd</div>
+          </div>
+          <div class="cost-result">
+            <span class="result-label">Estimated cost</span>
+            <div id="total-cost" class="cost-value">$1,837.50</div>
+          </div>
+        </div>
+
+        <div class="diagram-section">
+          <h2 id="results-heading">Plan view</h2>
+          <div class="diagram-wrap">
+            <canvas id="slab-canvas" width="700" height="280" aria-label="Plan view of the rectangular slab"></canvas>
+          </div>
+        </div>
+
+        <div class="summary" aria-label="Calculation summary">
+          <div class="summary-item">
+            <span>Base volume</span>
+            <strong id="base-volume">11.11 cu yd</strong>
+          </div>
+          <div class="summary-item">
+            <span>Waste volume</span>
+            <strong id="waste-volume">1.11 cu yd</strong>
+          </div>
+          <div class="summary-item">
+            <span>Exact volume with waste</span>
+            <strong id="needed-volume">12.22 cu yd</strong>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
 
   <script>
-    function convert() {
-      const cfs = Number(document.getElementById("cfs").value);
-      const gpm = cfs * 448.83;
-      document.getElementById("result").textContent = gpm.toFixed(1) + " gpm";
+    const inputs = {
+      length: document.getElementById("length"),
+      width: document.getElementById("width"),
+      thickness: document.getElementById("thickness"),
+      waste: document.getElementById("waste"),
+      price: document.getElementById("price")
+    };
+
+    function thicknessToFeet(thicknessInches) {
+      return thicknessInches / 12;
     }
+
+    function calculateBaseVolume(lengthFt, widthFt, thicknessInches) {
+      const thicknessFeet = thicknessToFeet(thicknessInches);
+      return lengthFt * widthFt * thicknessFeet / 27;
+    }
+
+    function calculateNeededVolume(baseVolumeCuYd, wastePercent) {
+      return baseVolumeCuYd * (1 + wastePercent / 100);
+    }
+
+    function roundUpToQuarterYard(volumeCuYd) {
+      return Math.ceil(volumeCuYd / 0.25) * 0.25;
+    }
+
+    function calculateCost(orderedVolumeCuYd, pricePerCuYd) {
+      return orderedVolumeCuYd * pricePerCuYd;
+    }
+
+    function validateInput(input, min, max, name) {
+      const value = Number(input.value);
+      if (!Number.isFinite(value) || input.value.trim() === "") {
+        return { valid: false, message: `Enter a ${name}.` };
+      }
+      if (value < min || value > max) {
+        return { valid: false, message: `${name} must be between ${min} and ${max}.` };
+      }
+      return { valid: true, value };
+    }
+
+    function readValues() {
+      const checks = [
+        validateInput(inputs.length, 5, 100, "length"),
+        validateInput(inputs.width, 5, 100, "width"),
+        validateInput(inputs.thickness, 4, 12, "thickness"),
+        validateInput(inputs.waste, 0, 20, "waste factor"),
+        validateInput(inputs.price, 50, 300, "concrete price")
+      ];
+
+      const invalid = checks.find(check => !check.valid);
+      if (invalid) {
+        document.getElementById("error").textContent = invalid.message;
+        return null;
+      }
+
+      document.getElementById("error").textContent = "";
+      return {
+        length: checks[0].value,
+        width: checks[1].value,
+        thickness: checks[2].value,
+        waste: checks[3].value,
+        price: checks[4].value
+      };
+    }
+
+    function drawSlab(lengthFt, widthFt) {
+      const canvas = document.getElementById("slab-canvas");
+      const context = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const pixelRatio = window.devicePixelRatio || 1;
+
+      if (canvas.width !== Math.round(rect.width * pixelRatio) ||
+          canvas.height !== Math.round(rect.height * pixelRatio)) {
+        canvas.width = Math.round(rect.width * pixelRatio);
+        canvas.height = Math.round(rect.height * pixelRatio);
+      }
+
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      const width = rect.width;
+      const height = rect.height;
+      context.clearRect(0, 0, width, height);
+
+      const margin = Math.min(84, width * 0.16);
+      const availableWidth = width - margin * 2;
+      const availableHeight = height - margin * 1.5;
+      const scale = Math.min(availableWidth / lengthFt, availableHeight / widthFt);
+      const slabWidth = lengthFt * scale;
+      const slabHeight = widthFt * scale;
+      const left = (width - slabWidth) / 2;
+      const top = (height - slabHeight) / 2;
+
+      context.fillStyle = "#dceaf3";
+      context.strokeStyle = "#2878a9";
+      context.lineWidth = 3;
+      context.fillRect(left, top, slabWidth, slabHeight);
+      context.strokeRect(left, top, slabWidth, slabHeight);
+
+      context.fillStyle = "#17324d";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = "700 14px 'Segoe UI', Arial, sans-serif";
+      context.fillText(`${lengthFt} ft`, left + slabWidth / 2, top - 24);
+      context.save();
+      context.translate(left - 28, top + slabHeight / 2);
+      context.rotate(-Math.PI / 2);
+      context.fillText(`${widthFt} ft`, 0, 0);
+      context.restore();
+
+      context.beginPath();
+      context.moveTo(left, top - 8);
+      context.lineTo(left, top + 8);
+      context.moveTo(left + slabWidth, top - 8);
+      context.lineTo(left + slabWidth, top + 8);
+      context.moveTo(left - 8, top);
+      context.lineTo(left + 8, top);
+      context.moveTo(left - 8, top + slabHeight);
+      context.lineTo(left + 8, top + slabHeight);
+      context.strokeStyle = "#17324d";
+      context.lineWidth = 1.5;
+      context.stroke();
+    }
+
+    function updateApp() {
+      const values = readValues();
+      const thicknessValue = Number(inputs.thickness.value);
+      document.getElementById("thickness-output").textContent =
+        `${Number.isInteger(thicknessValue) ? thicknessValue.toFixed(0) : thicknessValue.toFixed(1)} in`;
+      document.getElementById("waste-output").textContent = `${inputs.waste.value}%`;
+
+      if (!values) {
+        return;
+      }
+
+      const baseVolume = calculateBaseVolume(values.length, values.width, values.thickness);
+      const neededVolume = calculateNeededVolume(baseVolume, values.waste);
+      const orderedVolume = roundUpToQuarterYard(neededVolume);
+      const wasteVolume = neededVolume - baseVolume;
+      const totalCost = calculateCost(orderedVolume, values.price);
+
+      document.getElementById("base-volume").textContent =
+        `${baseVolume.toFixed(2)} cu yd`;
+      document.getElementById("waste-volume").textContent =
+        `${wasteVolume.toFixed(2)} cu yd`;
+      document.getElementById("needed-volume").textContent =
+        `${neededVolume.toFixed(2)} cu yd`;
+      document.getElementById("ordered-volume").textContent =
+        `${orderedVolume.toFixed(2)} cu yd`;
+      document.getElementById("total-cost").textContent =
+        totalCost.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+      drawSlab(values.length, values.width);
+    }
+
+    Object.values(inputs).forEach(input => {
+      input.addEventListener("input", updateApp);
+    });
+    window.addEventListener("resize", updateApp);
+    updateApp();
   </script>
 </body>
 </html>
