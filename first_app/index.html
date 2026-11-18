@@ -120,6 +120,7 @@
     .svg-small { fill: #82929d; font: 9px ui-sans-serif, system-ui, sans-serif; }
     .svg-strong { fill: #253f50; font: 10px ui-sans-serif, system-ui, sans-serif; font-weight: 700; }
     .svg-pi { fill: #527e90; font: 700 16px Georgia, "Times New Roman", serif; }
+    .svg-force-head { font: 700 25.5px Arial, sans-serif; }
     .diagram-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 13px; }
     .diagram { min-width: 0; padding: 10px 11px 7px; border: 1px solid #e7edf1; border-radius: 9px; }
     .diagram-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
@@ -251,7 +252,7 @@
             <span class="micro-label">Live results</span>
           </div>
           <div class="card-body">
-            <svg id="beam-drawing" class="beam-svg" viewBox="0 0 720 160" role="img" aria-label="Beam with loads, reactions, and exaggerated deflected shape"></svg>
+            <svg id="beam-drawing" class="beam-svg" viewBox="0 0 720 204" role="img" aria-label="Beam with loads, reactions, and exaggerated deflected shape"></svg>
             <div class="diagram-grid">
               <section class="diagram">
                 <div class="diagram-head"><span class="diagram-title">Shear force</span><span class="diagram-unit">kips</span></div>
@@ -589,11 +590,23 @@
         (index === 0 ? "M" : "L") + xpx(point.x).toFixed(2) + " " + beamYAt(point.x).toFixed(2)
       ).join(" ");
       const loadArrows = [];
+      const arrowWithFletching = (x1, y1, x2, y2, color, strokeWidth) => {
+        const direction = Math.sign(y2 - y1) || 1;
+        const featherY = y1 + direction * 8;
+        const secondFeatherBaseY = y1 + direction * 9;
+        const secondFeatherY = y1 + direction * 17;
+        const feathers = "M" + (x1 - 4) + " " + y1 + " L" + x1 + " " + featherY + " L" + (x1 + 4) + " " + y1 +
+          " M" + (x1 - 4) + " " + secondFeatherBaseY + " L" + x1 + " " + secondFeatherY + " L" + (x1 + 4) + " " + secondFeatherBaseY;
+        const head = direction > 0 ? "↓" : "↑";
+        const shaftEnd = y2 - direction * 9;
+        const headY = direction > 0 ? y2 + 3 : y2 + 22;
+        return '<g fill="none" stroke="' + color + '" stroke-width="' + strokeWidth + '" stroke-linecap="round"><line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + shaftEnd + '"/><path d="' + feathers + '"/></g><text x="' + x2 + '" y="' + headY + '" text-anchor="middle" fill="' + color + '" class="svg-force-head">' + head + '</text>';
+      };
       const downwardMarker = (pixelX, beamX, magnitude, color, strokeWidth) => {
         if (magnitude === 3.14) {
           return '<text x="' + pixelX + '" y="' + (beamYAt(beamX) - 5) + '" text-anchor="middle" class="svg-pi">π</text>';
         }
-        return '<line x1="' + pixelX + '" y1="31" x2="' + pixelX + '" y2="' + (beamYAt(beamX) - 12) + '" stroke="' + color + '" stroke-width="' + strokeWidth + '" marker-end="url(#arrow-down)"/>';
+        return arrowWithFletching(pixelX, 31, pixelX, beamYAt(beamX) - 12, color, strokeWidth);
       };
       for (const load of state.loads) {
         if (load.kind === "point") {
@@ -615,11 +628,11 @@
         ? '<path d="M' + left + ' 89 L' + (left - 17) + ' 112 L' + (left + 17) + ' 112 Z" fill="#e8f0f3" stroke="#6d8997" stroke-width="1.5"/><path d="M' + right + ' 89 L' + (right - 17) + ' 112 L' + (right + 17) + ' 112 Z" fill="#e8f0f3" stroke="#6d8997" stroke-width="1.5"/>'
         : '<rect x="' + (left - 12) + '" y="53" width="12" height="57" rx="2" fill="#e4edf1" stroke="#76919e"/><path d="M' + (left - 25) + ' 58 l13 8 M' + (left - 25) + ' 70 l13 8 M' + (left - 25) + ' 82 l13 8 M' + (left - 25) + ' 94 l13 8" stroke="#9aafb9" stroke-width="1.5"/>';
       const reactionDraw = state.support === "simple"
-        ? '<line x1="' + left + '" y1="147" x2="' + left + '" y2="117" stroke="#238263" stroke-width="2" marker-end="url(#arrow-up)"/><line x1="' + right + '" y1="147" x2="' + right + '" y2="117" stroke="#238263" stroke-width="2" marker-end="url(#arrow-up)"/><text x="' + left + '" y="157" text-anchor="middle" class="svg-label">' + fmt(result.reactions.left, 2) + ' k</text><text x="' + right + '" y="157" text-anchor="middle" class="svg-label">' + fmt(result.reactions.right, 2) + ' k</text>'
-        : '<line x1="' + (left + 30) + '" y1="141" x2="' + (left + 30) + '" y2="114" stroke="#238263" stroke-width="2" marker-end="url(#arrow-up)"/><text x="' + (left + 30) + '" y="155" text-anchor="middle" class="svg-label">' + fmt(result.reactions.left, 2) + ' k</text><text x="' + (left + 40) + '" y="42" class="svg-label">Fixed-end M = ' + fmt(result.reactions.fixedMoment, 2) + ' kip-ft</text>';
+        ? arrowWithFletching(left, 147, left, 117, "#238263", 2) + arrowWithFletching(right, 147, right, 117, "#238263", 2) + '<text x="' + left + '" y="166" text-anchor="middle" class="svg-label">' + fmt(result.reactions.left, 2) + ' k</text><text x="' + right + '" y="166" text-anchor="middle" class="svg-label">' + fmt(result.reactions.right, 2) + ' k</text>'
+        : arrowWithFletching(left + 30, 141, left + 30, 114, "#238263", 2) + '<text x="' + (left + 30) + '" y="166" text-anchor="middle" class="svg-label">' + fmt(result.reactions.left, 2) + ' k</text><text x="' + (left + 40) + '" y="42" class="svg-label">Fixed-end M = ' + fmt(result.reactions.fixedMoment, 2) + ' kip-ft</text>';
       const middle = xpx(state.L / 2);
-      const ticks = '<line x1="' + left + '" y1="127" x2="' + right + '" y2="127" stroke="#c2d0d7"/><line x1="' + left + '" y1="123" x2="' + left + '" y2="131" stroke="#a9bac4"/><line x1="' + middle + '" y1="123" x2="' + middle + '" y2="131" stroke="#a9bac4"/><line x1="' + right + '" y1="123" x2="' + right + '" y2="131" stroke="#a9bac4"/><text x="' + left + '" y="143" text-anchor="middle" class="svg-small">0 ft</text><text x="' + middle + '" y="143" text-anchor="middle" class="svg-small">' + fmt(state.L / 2, 1) + ' ft</text><text x="' + right + '" y="143" text-anchor="middle" class="svg-small">' + fmt(state.L, 1) + ' ft</text>';
-      svg.innerHTML = '<defs><marker id="arrow-down" markerWidth="7" markerHeight="7" refX="3.5" refY="6" orient="auto"><path d="M0 0 L7 0 L3.5 6 Z" fill="#527e90"/></marker><marker id="arrow-up" markerWidth="7" markerHeight="7" refX="3.5" refY="1" orient="auto"><path d="M0 6 L7 6 L3.5 0 Z" fill="#238263"/></marker></defs><line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="#bccbd2" stroke-width="2" stroke-dasharray="5 5"/><path d="' + beamPath + '" fill="none" stroke="#304f60" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>' + loadArrows.join("") + supportDraw + reactionDraw + ticks;
+      const ticks = '<line x1="' + left + '" y1="176" x2="' + right + '" y2="176" stroke="#c2d0d7"/><line x1="' + left + '" y1="172" x2="' + left + '" y2="180" stroke="#a9bac4"/><line x1="' + middle + '" y1="172" x2="' + middle + '" y2="180" stroke="#a9bac4"/><line x1="' + right + '" y1="172" x2="' + right + '" y2="180" stroke="#a9bac4"/><text x="' + left + '" y="194" text-anchor="middle" class="svg-small">0 ft</text><text x="' + middle + '" y="194" text-anchor="middle" class="svg-small">' + fmt(state.L / 2, 1) + ' ft</text><text x="' + right + '" y="194" text-anchor="middle" class="svg-small">' + fmt(state.L, 1) + ' ft</text>';
+      svg.innerHTML = '<line x1="' + left + '" y1="' + y + '" x2="' + right + '" y2="' + y + '" stroke="#bccbd2" stroke-width="2" stroke-dasharray="5 5"/><path d="' + beamPath + '" fill="none" stroke="#304f60" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>' + loadArrows.join("") + supportDraw + reactionDraw + ticks;
       document.querySelector("#beam-summary").textContent = (state.support === "simple" ? "Simply supported" : "Cantilever · fixed left") + " · " + fmt(state.L, 1) + " ft · " + state.section.name + " · deflection exaggerated";
     }
 

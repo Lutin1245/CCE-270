@@ -123,3 +123,9 @@ sizing a floor beam or deck joist.
   deformed beam; retain a faint undeformed reference line.
 - For point or uniform load magnitudes exactly equal to 3.14, show π
   characters in place of their downward arrows. Keep upward reaction arrows.
+- Draw fletching at the tail of downward load arrows and upward reaction
+  arrows, fanned opposite the arrow's direction. Use `↓` or `↑` characters
+  at 1.5 times the previous size instead of triangular markers, with two
+  fletching pairs. Place the second pair farther down the shaft at the same
+  angle as the first. The 3.14 π-marker special case remains a character,
+  not an arrow.
