@@ -9,3 +9,5 @@ For a simply supported 20 ft beam carrying a 1 kip/ft uniform load across the fu
 - The `L/360` limit is `240/360 = 0.667 in`, so both checks pass.
 
 Entering a uniform-load end beyond the beam span is limited to the beam end before recalculation.
+
+For the special input case of a uniform-load end at `-3 ft`, the page inverts its colors while the analysis uses `+3 ft`. The input remains `-3 ft` so the special behavior stays active.

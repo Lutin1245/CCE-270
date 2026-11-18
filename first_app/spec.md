@@ -31,3 +31,6 @@ deflection 0.609 in.
 
 ## Out of scope
 Continuous beams and buckling.
+
+Detailed requirements: [polished specification](./specs/polished_spec.md).
+Revised staged roadmap: [implementation plan](./00_planning/beam_designer_implementation_plan.md).

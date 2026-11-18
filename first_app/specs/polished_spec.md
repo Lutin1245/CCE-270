@@ -110,3 +110,16 @@ sizing a floor beam or deck joist.
 - Self-weight, shear stress, lateral-torsional buckling, load
   combinations, and continuous beams.
 - Saving designs.
+
+## Special demonstration behavior
+
+- If a uniform-load end position is exactly -3 ft, invert the page colors
+  and analyze that end position as +3 ft. Keep the entered value visible
+  as -3 ft. No other negative load position is accepted.
+- If the span is a prime whole number of feet, change the top-right oval
+  from “BYU” to “Utah”. For a non-prime or non-integer span, show “BYU”.
+- Shape the beam drawing from the calculated deflection curve. Magnify the
+  displacement for visibility and keep the load arrows attached to the
+  deformed beam; retain a faint undeformed reference line.
+- For point or uniform load magnitudes exactly equal to 3.14, show π
+  characters in place of their downward arrows. Keep upward reaction arrows.
