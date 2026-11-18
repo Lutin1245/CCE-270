@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beam Designer</title>
+  <style>
+    :root { --blue:#1d4ed8; --ink:#172033; --muted:#64748b; --line:#dbe3ef; --bg:#f4f7fb; --green:#16a34a; --amber:#d97706; --red:#dc2626; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--ink); background:var(--bg); }
+    header { height:68px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:white; border-bottom:1px solid var(--line); }
+    header h1 { margin:0; font-size:20px; letter-spacing:-.02em; }
+    .header-actions { display:flex; gap:8px; }
+    button, select, input { font:inherit; }
+    button { border:0; border-radius:8px; cursor:pointer; }
+    .btn { padding:9px 12px; background:#eef3ff; color:#1e40af; font-weight:700; }
+    .btn-primary { background:var(--blue); color:white; }
+    main { max-width:1500px; margin:0 auto; display:grid; grid-template-columns:340px minmax(0,1fr); gap:18px; padding:18px; }
+    .card, .panel { background:white; border:1px solid #e7edf5; border-radius:12px; box-shadow:0 8px 24px rgba(30,64,175,.055); }
+    .panel { padding:16px; }
+    .sidebar { display:flex; flex-direction:column; gap:12px; }
+    .section-title { margin:0 0 12px; font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+    .field { display:grid; gap:6px; margin-bottom:12px; }
+    .field label { font-size:13px; font-weight:700; }
+    .field-row { display:grid; grid-template-columns:1fr 78px; gap:8px; align-items:center; }
+    select, input[type="number"], input[type="text"] { width:100%; height:38px; border:1px solid var(--line); border-radius:8px; padding:0 10px; background:white; color:var(--ink); }
+    input[type="range"] { width:100%; accent-color:var(--blue); }
+    .load-list { display:grid; gap:8px; }
+    .load-card { border:1px solid var(--line); border-radius:8px; padding:10px; background:#fbfdff; }
+    .load-card h3 { margin:0 0 8px; font-size:13px; }
+    .load-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .load-actions { display:flex; gap:8px; margin-top:10px; }
+    .load-actions button { flex:1; }
+    .results { display:grid; gap:12px; min-width:0; }
+    .drawing-card { height:180px; }
+    .card-header { display:flex; align-items:center; justify-content:space-between; padding:13px 16px 0; }
+    .card-header h2 { margin:0; font-size:15px; }
+    .plot-placeholder { height:112px; margin:8px 16px 12px; border-radius:8px; background:linear-gradient(180deg,#fafdff,#f5f8fc); border:1px solid #edf2f7; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:13px; }
+    .beam-placeholder { height:145px; margin:8px 16px 12px; border-radius:8px; background:#fbfdff; display:flex; align-items:center; justify-content:center; }
+    .beam-placeholder svg { width:92%; height:120px; }
+    .diagrams { display:grid; gap:10px; }
+    .diagram-card { height:150px; }
+    .diagram-card .plot-placeholder { height:105px; }
+    .checks { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .check-card { min-height:112px; padding:16px; }
+    .check-card h2 { margin:0 0 10px; font-size:14px; }
+    .check-value { display:flex; justify-content:space-between; align-items:end; }
+    .check-value strong { font-size:22px; }
+    .pass { color:var(--green); font-weight:800; }
+    .bar { height:8px; margin-top:12px; border-radius:99px; background:#edf2f7; overflow:hidden; }
+    .bar span { display:block; height:100%; width:60%; background:var(--green); }
+    .recommendation { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 16px; }
+    .recommendation p { margin:0; font-size:13px; }
+    .recommendation strong { color:var(--blue); }
+    @media (max-width:900px) { main { grid-template-columns:1fr; } .sidebar { order:0; } .checks { grid-template-columns:1fr; } }
+    @media print {
+      header { display:none; } body { background:white; } main { display:block; max-width:none; padding:0; } .sidebar { display:none; } .card, .panel { box-shadow:none; break-inside:avoid; } .results { gap:8px; } .btn { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Beam Designer</h1>
+    <div class="header-actions">
+      <button class="btn" id="printButton">Print report</button>
+    </div>
+  </header>
+  <main>
+    <aside class="sidebar">
+      <section class="panel">
+        <h2 class="section-title">Beam</h2>
+        <div class="field"><label for="support">Support type</label><select id="support"><option>Simply supported</option><option>Cantilever</option></select></div>
+        <div class="field"><label for="span">Span (ft)</label><div class="field-row"><input type="range" min="4" max="40" value="20"><input id="span" type="number" value="20"></div></div>
+        <div class="field"><label for="limit">Deflection limit</label><select id="limit"><option>L/360</option><option>L/240</option></select></div>
+      </section>
+      <section class="panel">
+        <h2 class="section-title">Loads</h2>
+        <div class="load-list">
+          <article class="load-card"><h3>Uniform load</h3><div class="load-grid"><label>Magnitude (k/ft)<input type="number" value="1"></label><label>Start (ft)<input type="number" value="0"></label><label>End (ft)<input type="number" value="20"></label></div></article>
+        </div>
+        <div class="load-actions"><button class="btn" type="button">+ Point load</button><button class="btn" type="button">+ Uniform load</button></div>
+      </section>
+      <section class="panel">
+        <h2 class="section-title">Section</h2>
+        <div class="field"><label for="material">Material</label><select id="material"><option>Steel</option><option>Lumber</option></select></div>
+        <div class="field"><label for="section">Section</label><select id="section"><option>W12x26</option></select></div>
+      </section>
+    </aside>
+    <section class="results">
+      <article class="card drawing-card"><div class="card-header"><h2>Beam and reactions</h2></div><div class="beam-placeholder">
+        <svg viewBox="0 0 800 120" aria-label="Beam diagram placeholder">
+          <line x1="90" y1="64" x2="710" y2="64" stroke="#1e293b" stroke-width="8" stroke-linecap="round"/>
+          <path d="M90 64l-22 34h44z M710 64l-22 34h44z" fill="#94a3b8"/>
+          <g stroke="#2563eb" stroke-width="3" marker-end="url(#arrow)"></g>
+          <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0l10 5-10 5z" fill="#2563eb"/></marker></defs>
+        </svg>
+      </div></article>
+      <div class="diagrams">
+        <article class="card diagram-card"><div class="card-header"><h2>Shear diagram</h2></div><div class="plot-placeholder">V (kips)</div></article>
+        <article class="card diagram-card"><div class="card-header"><h2>Moment diagram</h2></div><div class="plot-placeholder">M (kip-ft)</div></article>
+        <article class="card diagram-card"><div class="card-header"><h2>Deflected shape</h2></div><div class="plot-placeholder">y (in)</div></article>
+      </div>
+      <div class="checks">
+        <article class="card check-card"><h2>Bending</h2><div class="check-value"><span><strong>17.96 ksi</strong><small> / 30.00 ksi</small></span><span class="pass">PASS</span></div><div class="bar"><span></span></div></article>
+        <article class="card check-card"><h2>Deflection</h2><div class="check-value"><span><strong>0.609 in</strong><small> / 0.667 in</small></span><span class="pass">PASS</span></div><div class="bar"><span></span></div></article>
+      </div>
+      <article class="card recommendation"><p>Lightest passing section: <strong>W12x26</strong></p><button class="btn btn-primary" type="button">Use section</button></article>
+    </section>
+  </main>
+</body>
+</html>
