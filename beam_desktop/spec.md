@@ -1,48 +1,66 @@
-# Project specification
+# Beam Designer specification
 
 ## Platform
-- Python desktop app using Tkinter, started with `python app.py`
-- Calculations with numpy, kept in their own module, separate from
-  the window code
-- Diagrams drawn with matplotlib, embedded in the window
 
-# Beam Designer
+- Python desktop app launched with `python app.py`
+- Tkinter window with inputs in a left panel and the beam plus diagrams on the
+  right; the window and plots resize with the window
+- NumPy-based beam calculations in a separate module, independent of the UI
+- Matplotlib diagrams embedded in the window
+- The existing `index.html` web app remains available and is not replaced
 
 ## Purpose
-Shear, moment, and deflection diagrams for a beam, with a check of
-whether the beam is strong and stiff enough.
+
+Show beam shear, moment, and deflection, with bending-strength and
+serviceability checks for common beam/load cases.
 
 ## Inputs
-- Simply supported or cantilever, and the span (ft)
-- Point loads and uniform loads
-- A steel W-shape or a lumber size
+
+- Simply supported or fixed-left cantilever support
+- Span from 4 to 40 ft
+- Any number of downward point loads and partial uniform loads
+- Section selection: W12x26, W18x35, or Douglas Fir-Larch No. 2 2x10
+- Deflection limit L/360 or L/240
 
 ## Calculations
+
 - Reactions, shear, and moment from statics
-- Deflection
-- Bending stress fb = M/S, compared to the allowable stress
-- Deflection compared to L/360
+- Elastic deflection using the selected section's elastic modulus and moment of
+  inertia
+- Bending stress `fb = |M|max * 12 / S`, compared with the section's allowable
+  bending stress
+- Maximum absolute deflection compared with the selected span-to-deflection
+  limit
+
+All inputs and results use consistent units: span and load positions in feet,
+point loads in kips, uniform loads in kips/ft, moments in kip-ft, shear in kips,
+and deflection in inches.
+
+Steel section properties use AISC Shapes Database v16.0. The steel allowable
+bending stress and lumber design values retain the educational assumptions in
+the existing web prototype; the steel grade is not specified.
 
 ## Outputs
-- The beam with its loads, and the three diagrams
-- Pass or fail for bending and deflection
+
+- Beam and applied loads, shear diagram, bending-moment diagram, and deflection
+  diagram
+- Support reactions, maximum moment and its location, maximum deflection, and
+  bending/deflection pass or fail
 
 ## Look and feel
-Clean and professional, with an example beam loaded when it opens.
+
+Clean, professional, resizable desktop window. Place beam inputs in a panel on
+the left and the beam visualization, diagrams, and results on the right.
 
 ## Validation
-20 ft simply supported W12x26 with 1 kip/ft: M = 50.0 kip-ft,
-deflection 0.609 in.
+
+- 20 ft simply supported W12x26 with 1 kip/ft over the full span: maximum
+  moment 50.0 kip-ft and maximum deflection 0.609 in.
+- 30 ft simply supported W18x35 with 2 kip/ft from 0 to 15 ft only: left
+  reaction 22.5 kips, right reaction 7.5 kips, and maximum moment
+  126.6 kip-ft at 11.25 ft.
 
 ## Out of scope
-Continuous beams and buckling.
 
-Detailed requirements: [polished specification](./specs/polished_spec.md).
-Revised staged roadmap: [implementation plan](./00_planning/beam_designer_implementation_plan.md).
-
-
-Change the Look and feel section for a desktop window: inputs in a panel on the left, the beam and diagrams on the right, and a window that can be resized. Remove the lines about phones.
-
-Add this case to the Validation section: Simply supported, 30 ft, W18x35, uniform 2 kips/ft from 0 to 15 ft
-   only: reactions 22.5 k (left) and 7.5 k (right); max moment
-   126.6 kip-ft at 11.25 ft.
+Continuous beams, buckling, self-weight, and code load combinations. Only the
+listed three section selections are included in the initial desktop catalog.

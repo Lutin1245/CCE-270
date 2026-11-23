@@ -1,70 +1,53 @@
 # Beam Desktop Agent Guide
 
-## Scope
+## Scope and layout
 
-This folder is a standalone, single-file beam-analysis web app. Unless a task
-explicitly covers the rest of the repository, all edits should stay in this
-folder.
+This folder contains a browser app and a Python desktop app. Keep both
+available unless a task explicitly asks to remove one.
 
-## Project layout
+- `index.html` is the standalone web app served directly by GitHub Pages.
+- `app.py` is the resizable Tkinter desktop interface.
+- `beam_calculations.py` contains GUI-independent beam calculations.
+- `tests/` contains tests for the calculation module.
+- `spec.md` is the local project specification.
 
-- `index.html` contains the HTML, CSS, SVG rendering, beam calculations,
-  validation, and interaction logic. Keep this as a single-file app unless the
-  user explicitly requests a build setup or module split.
-- `spec.md` is the local project summary and validation checklist.
-- `prompts.md`, if it is present, is the session/request log. `AGENTS.md`,
-  `spec.md`, `prompts.md`, and `index.html` belong at the project root.
-- GitHub Pages should continue to serve `index.html` directly.
+Use plain HTML, CSS, and browser JavaScript for the web app. Use Python,
+Tkinter, NumPy, and Matplotlib for the desktop app. Do not introduce additional
+frameworks or build tooling without a clear requirement.
 
-Do not assume absent planning or spec folders exist; do not create build,
-dependency, or package configuration without a clear requirement.
+## Engineering behavior
 
-## Implementation expectations
+- Keep the default example: 20 ft simply supported W12x26 with a uniform
+  1 kip/ft load.
+- Support simply supported and fixed-left cantilever beams, point loads,
+  partial uniform loads, and the three catalog sections W12x26, W18x35, and 2x10.
+- Use consistent units: span and load positions in feet, point loads in kips,
+  uniform loads in kips/ft, moments in kip-ft, shear in kips, and deflection in
+  inches.
+- Preserve the bending check `|M|max * 12 / S` against the catalog allowable
+  bending stress and the selected L/360 or L/240 deflection check.
+- Validate finite values and load ranges before calculations. Surface invalid
+  user input instead of silently substituting values.
+- Keep calculation logic independent of Tkinter and Matplotlib. Test changes to
+  `beam_calculations.py` without opening the GUI.
+- Preserve load boundaries and support boundary conditions in statics and
+  deflection calculations. Do not use plot resolution as the sole source of
+  reported extrema.
+- The default regression case must report maximum moment 50.0 kip-ft and
+  maximum deflection 0.609 in for W12x26.
+- The partial-load regression case is 30 ft simply supported with 2 kip/ft
+  from 0 to 15 ft: reactions 22.5 kips and 7.5 kips, and maximum moment
+  126.6 kip-ft at 11.25 ft.
 
-- Use plain HTML, CSS, and browser JavaScript. Do not introduce frameworks,
-  dependencies, or transpilation.
-- Preserve the existing responsive layout and accessible form/diagram labels.
-- Keep the example loaded by default: 20 ft simply supported W12x26 with a
-  uniform 1 kip/ft load.
-- Maintain support for simply supported beams and cantilever beams with loads
-  and section selections.
-- Keep engineering units and sign conventions consistent:
-  - Span and load positions are in feet.
-  - Point-load magnitudes are kips.
-  - Uniform-load magnitudes are kips per foot.
-  - Moments are kip-ft.
-  - Shear is kips.
-  - Deflection is inches.
-- Preserve the bending check as `|M|max * 12 / S` compared with the selected
-  material's allowable stress.
-- Preserve the deflection check against the selected `L/360` or `L/240` limit.
-- Be careful with beam state and numerical integration. Preserve load
-  boundaries, reaction calculations, coordinate sampling, and section properties
-  when changing the calculator.
+## Validation
 
-## Editing and validation
+- Run calculation tests with `python -m unittest discover -s tests -v`.
+- For UI changes, launch `python app.py` and check both support modes, point and
+  uniform loads, all sections and both deflection limits, resizing, and visible
+  input errors.
+- For web-app changes, check the browser behavior and responsive layout without
+  breaking direct GitHub Pages serving.
 
-- Make surgical changes in `index.html`; keep CSS, markup, and JavaScript in
-  their existing `<style>` and `<script>` sections.
-- Prefer native browser APIs and the existing DOM helpers. Do not rewrite the
-  page architecture for a small fix.
-- Validate input ranges and finite values before calculations, and retain the
-  visible form-error pattern for invalid input.
-- Use browser developer tools or a local HTTP server to test UI changes.
-- Check at minimum:
-  - The default example.
-  - At least one point load and one uniform load.
-  - Simply supported and cantilever modes.
-  - Both W12x26 and 2x10 sections.
-  - Both deflection limits.
-  - Responsive behavior and no browser console errors.
-- The required 20 ft example should calculate a maximum moment of 50.0 kip-ft
-  and a deflection of 0.609 in for the W12x26 model. Do not weaken or replace
-  this as a regression check.
-
-## Request logging
-
-After each completed request, add one concise entry to `prompts.md` when that
-file is being maintained in this project. Record what was asked, what changed,
-and whether it succeeded. Do not create `prompts.md` solely for a documentation
-only request unless the project already uses it.
+After each completed request, add a concise entry to `prompts.md` only if that
+file is already being maintained. Do not create it solely for documentation
+requests.
