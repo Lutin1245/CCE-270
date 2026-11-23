@@ -22,6 +22,14 @@ serviceability checks for common beam/load cases.
 - Section selection: W12x26, W18x35, or Douglas Fir-Larch No. 2 2x10
 - Deflection limit L/360 or L/240
 
+## File operations
+
+Provide Save and Open commands in a File menu. Store beam cases as versioned
+JSON files containing the support type, span, section, deflection limit, and
+all point and uniform loads. Validate an opened file before replacing the
+current beam case, and report invalid or unsupported files without changing the
+current case.
+
 ## Calculations
 
 - Reactions, shear, and moment from statics

@@ -8,7 +8,8 @@ available unless a task explicitly asks to remove one.
 - `index.html` is the standalone web app served directly by GitHub Pages.
 - `app.py` is the resizable Tkinter desktop interface.
 - `beam_calculations.py` contains GUI-independent beam calculations.
-- `tests/` contains tests for the calculation module.
+- `beam_io.py` handles versioned JSON save/open.
+- `tests/` contains calculation and persistence tests.
 - `spec.md` is the local project specification.
 
 Use plain HTML, CSS, and browser JavaScript for the web app. Use Python,
@@ -30,6 +31,8 @@ frameworks or build tooling without a clear requirement.
   user input instead of silently substituting values.
 - Keep calculation logic independent of Tkinter and Matplotlib. Test changes to
   `beam_calculations.py` without opening the GUI.
+- Keep saved cases limited to the supported catalog and input fields. Validate
+  an opened case fully before changing the current UI state.
 - Preserve load boundaries and support boundary conditions in statics and
   deflection calculations. Do not use plot resolution as the sole source of
   reported extrema.
@@ -42,6 +45,8 @@ frameworks or build tooling without a clear requirement.
 ## Validation
 
 - Run calculation tests with `python -m unittest discover -s tests -v`.
+- Check JSON save/open round trips and ensure malformed files leave the current
+  case unchanged.
 - For UI changes, launch `python app.py` and check both support modes, point and
   uniform loads, all sections and both deflection limits, resizing, and visible
   input errors.

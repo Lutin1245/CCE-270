@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from dataclasses import dataclass
-from tkinter import ttk
+from tkinter import filedialog, messagebox, ttk
 
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -19,11 +19,13 @@ from beam_calculations import (
     UniformLoad,
     analyze_beam,
 )
+from beam_io import load_beam_case, save_beam_case
 
 SUPPORT_CHOICES = {
     "Simply supported": "simple",
     "Cantilever · fixed left": "cantilever",
 }
+SUPPORT_LABELS = {support: label for label, support in SUPPORT_CHOICES.items()}
 
 
 @dataclass
@@ -88,6 +90,7 @@ class BeamDesignerApp:
         self.error_var = tk.StringVar()
         self.summary_var = tk.StringVar()
 
+        self._build_file_menu()
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(1, weight=1)
         self.controls = ScrollableFrame(root)
@@ -103,6 +106,14 @@ class BeamDesignerApp:
         self._build_results()
         self._add_load("uniform", magnitude="1", start="0", end="20")
         self._recalculate()
+
+    def _build_file_menu(self) -> None:
+        self.menu_bar = tk.Menu(self.root)
+        self.file_menu = tk.Menu(self.menu_bar, tearoff=False)
+        self.file_menu.add_command(label="Open...", command=self._open_beam)
+        self.file_menu.add_command(label="Save...", command=self._save_beam)
+        self.menu_bar.add_cascade(label="File", menu=self.file_menu)
+        self.root.configure(menu=self.menu_bar)
 
     def _build_controls(self) -> None:
         panel = self.controls.content
@@ -282,6 +293,71 @@ class BeamDesignerApp:
         self.limit_var.set("360")
         self.load_rows.clear()
         self._add_load("uniform", magnitude="1", start="0", end="20")
+        self._recalculate()
+
+    def _save_beam(self) -> None:
+        try:
+            case = self._read_case()
+            analyze_beam(case)
+        except (KeyError, ValueError) as error:
+            messagebox.showerror("Cannot save beam", str(error), parent=self.root)
+            return
+        path = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="Save beam case",
+            defaultextension=".json",
+            filetypes=(("Beam case JSON", "*.json"), ("All files", "*.*")),
+        )
+        if not path:
+            return
+        try:
+            save_beam_case(path, case)
+        except (OSError, ValueError, TypeError) as error:
+            messagebox.showerror("Cannot save beam", str(error), parent=self.root)
+            return
+        messagebox.showinfo("Beam saved", "Beam case saved successfully.", parent=self.root)
+
+    def _open_beam(self) -> None:
+        path = filedialog.askopenfilename(
+            parent=self.root,
+            title="Open beam case",
+            filetypes=(("Beam case JSON", "*.json"), ("All files", "*.*")),
+        )
+        if not path:
+            return
+        try:
+            case = load_beam_case(path)
+        except (OSError, ValueError) as error:
+            messagebox.showerror("Cannot open beam", str(error), parent=self.root)
+            return
+        self._apply_case(case)
+
+    def _apply_case(self, case: BeamCase) -> None:
+        self.support_var.set(SUPPORT_LABELS[case.support])
+        self.span_var.set(str(case.span_ft))
+        self.section_var.set(case.section.key)
+        self.limit_var.set(str(case.deflection_limit_ratio))
+        self.load_rows.clear()
+        for load in case.loads:
+            if isinstance(load, PointLoad):
+                self.load_rows.append(
+                    LoadRow(
+                        "point",
+                        tk.StringVar(value=str(load.magnitude_kips)),
+                        position=tk.StringVar(value=str(load.position_ft)),
+                    )
+                )
+            else:
+                self.load_rows.append(
+                    LoadRow(
+                        "uniform",
+                        tk.StringVar(value=str(load.magnitude_kip_per_ft)),
+                        start=tk.StringVar(value=str(load.start_ft)),
+                        end=tk.StringVar(value=str(load.end_ft)),
+                    )
+                )
+        self._refresh_load_rows()
+        self.error_var.set("")
         self._recalculate()
 
     def _schedule_recalculation(self, _event: tk.Event | None = None) -> None:
