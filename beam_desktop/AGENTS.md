@@ -47,6 +47,7 @@ frameworks or build tooling without a clear requirement.
 - Run calculation tests with `python -m unittest discover -s tests -v`.
 - Check JSON save/open round trips and ensure malformed files leave the current
   case unchanged.
+- Check CSV exports include unit-bearing headers and every sampled beam point.
 - For UI changes, launch `python app.py` and check both support modes, point and
   uniform loads, all sections and both deflection limits, resizing, and visible
   input errors.

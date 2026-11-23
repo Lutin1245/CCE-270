@@ -17,7 +17,8 @@ The default case is a 20 ft simply supported W12x26 beam with a 1 kip/ft
 uniform load. The desktop app supports point loads, partial uniform loads,
 simply supported and cantilever beams, three section choices, and L/360 or
 L/240 deflection limits. Use **File > Save** or **File > Open** to persist and
-restore complete beam cases in versioned JSON files.
+restore complete beam cases in versioned JSON files. Use **Export results to
+CSV** to export the sampled x, V, M, and deflection values with units.
 
 ## Section-property assumptions
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from math import isfinite
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any
 
 from beam_calculations import (
     BeamCase,
+    BeamResults,
     PointLoad,
     SECTION_CATALOG,
     UniformLoad,
@@ -24,11 +26,14 @@ _CASE_KEYS = {
     "deflection_limit_ratio",
     "loads",
 }
+_RESULT_HEADERS = ("x (ft)", "V (kips)", "M (kip-ft)", "Deflection (in)")
 
 
 def save_beam_case(path: str | Path, case: BeamCase) -> None:
-    if not isinstance(case.section.key, str) or case.section.key not in SECTION_CATALOG or (
-        SECTION_CATALOG[case.section.key] != case.section
+    if (
+        not isinstance(case.section.key, str)
+        or case.section.key not in SECTION_CATALOG
+        or SECTION_CATALOG[case.section.key] != case.section
     ):
         raise ValueError("Only catalog sections can be saved.")
     analyze_beam(case)
@@ -77,7 +82,10 @@ def load_beam_case(path: str | Path) -> BeamCase:
 
     if not isinstance(data, dict) or set(data) != _CASE_KEYS:
         raise ValueError("Beam file has an invalid case structure.")
-    if type(data["format_version"]) is not int or data["format_version"] != FORMAT_VERSION:
+    if (
+        type(data["format_version"]) is not int
+        or data["format_version"] != FORMAT_VERSION
+    ):
         raise ValueError(
             f"Unsupported beam file version: {data['format_version']!r}."
         )
@@ -138,6 +146,22 @@ def load_beam_case(path: str | Path) -> BeamCase:
     )
     analyze_beam(case)
     return case
+
+
+def export_results_csv(path: str | Path, results: BeamResults) -> None:
+    columns = (
+        results.x_ft,
+        results.shear_kips,
+        results.moment_kip_ft,
+        results.deflection_in,
+    )
+    if len({len(column) for column in columns}) != 1:
+        raise ValueError("Beam result columns must have matching lengths.")
+    with Path(path).open("w", encoding="utf-8-sig", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(_RESULT_HEADERS)
+        for row in zip(*columns):
+            writer.writerow(float(value) for value in row)
 
 
 def _read_number(value: object, label: str) -> float:

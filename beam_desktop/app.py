@@ -19,7 +19,7 @@ from beam_calculations import (
     UniformLoad,
     analyze_beam,
 )
-from beam_io import load_beam_case, save_beam_case
+from beam_io import export_results_csv, load_beam_case, save_beam_case
 
 SUPPORT_CHOICES = {
     "Simply supported": "simple",
@@ -89,6 +89,7 @@ class BeamDesignerApp:
         self.limit_var = tk.StringVar(value="360")
         self.error_var = tk.StringVar()
         self.summary_var = tk.StringVar()
+        self.current_result: BeamResults | None = None
 
         self._build_file_menu()
         self.root.rowconfigure(0, weight=1)
@@ -190,6 +191,13 @@ class BeamDesignerApp:
             font=("Segoe UI", 10, "bold"),
         )
         summary.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        self.export_button = ttk.Button(
+            self.results,
+            text="Export results to CSV",
+            command=self._export_results,
+            state="disabled",
+        )
+        self.export_button.grid(row=0, column=1, sticky="ne", padx=(8, 0))
         self.figure = Figure(figsize=(10, 7), dpi=100, facecolor="white")
         self.axes = self.figure.subplots(4, 1, sharex=True)
         self.figure.subplots_adjust(
@@ -332,6 +340,27 @@ class BeamDesignerApp:
             return
         self._apply_case(case)
 
+    def _export_results(self) -> None:
+        result = self.current_result
+        if result is None:
+            return
+        path = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="Export beam results",
+            defaultextension=".csv",
+            filetypes=(("CSV files", "*.csv"), ("All files", "*.*")),
+        )
+        if not path:
+            return
+        try:
+            export_results_csv(path, result)
+        except (OSError, ValueError) as error:
+            messagebox.showerror("Cannot export results", str(error), parent=self.root)
+            return
+        messagebox.showinfo(
+            "Results exported", "Beam results exported to CSV.", parent=self.root
+        )
+
     def _apply_case(self, case: BeamCase) -> None:
         self.support_var.set(SUPPORT_LABELS[case.support])
         self.span_var.set(str(case.span_ft))
@@ -363,6 +392,8 @@ class BeamDesignerApp:
     def _schedule_recalculation(self, _event: tk.Event | None = None) -> None:
         if self.pending_update is not None:
             self.root.after_cancel(self.pending_update)
+        self.current_result = None
+        self.export_button.configure(state="disabled")
         self.pending_update = self.root.after(120, self._recalculate)
 
     def _read_case(self) -> BeamCase:
@@ -398,9 +429,13 @@ class BeamDesignerApp:
             case = self._read_case()
             result = analyze_beam(case)
         except (ValueError, KeyError) as error:
+            self.current_result = None
+            self.export_button.configure(state="disabled")
             self.error_var.set(str(error) or "Enter valid finite numeric values.")
             return
         self.error_var.set("")
+        self.current_result = result
+        self.export_button.configure(state="normal")
         section = case.section
         self.properties_label.configure(
             text=(

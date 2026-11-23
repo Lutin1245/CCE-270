@@ -1,10 +1,17 @@
+import csv
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from beam_calculations import BeamCase, PointLoad, SECTION_CATALOG, UniformLoad
-from beam_io import load_beam_case, save_beam_case
+from beam_calculations import (
+    BeamCase,
+    PointLoad,
+    SECTION_CATALOG,
+    UniformLoad,
+    analyze_beam,
+)
+from beam_io import export_results_csv, load_beam_case, save_beam_case
 
 
 class BeamFileTests(unittest.TestCase):
@@ -71,6 +78,42 @@ class BeamFileTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "within the beam span"):
                 load_beam_case(path)
+
+    def test_csv_export_contains_unit_headers_and_all_sample_rows(self):
+        result = analyze_beam(
+            BeamCase(
+                span_ft=20,
+                support="simple",
+                loads=(UniformLoad(1, 0.11, 19.73),),
+                section=SECTION_CATALOG["W12x26"],
+            )
+        )
+        self.assertIn(0.11, result.x_ft)
+        self.assertIn(19.73, result.x_ft)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "results.csv"
+            export_results_csv(path, result)
+
+            self.assertTrue(path.read_bytes().startswith(b"\xef\xbb\xbf"))
+            with path.open("r", encoding="utf-8-sig", newline="") as file:
+                rows = list(csv.reader(file))
+
+        self.assertEqual(
+            rows[0], ["x (ft)", "V (kips)", "M (kip-ft)", "Deflection (in)"]
+        )
+        self.assertEqual(len(rows), len(result.x_ft) + 1)
+        self.assertEqual(float(rows[1][0]), 0.0)
+        self.assertEqual(float(rows[-1][0]), 20.0)
+        exported_positions = {float(row[0]) for row in rows[1:]}
+        self.assertIn(0.11, exported_positions)
+        self.assertIn(19.73, exported_positions)
+        moment_peak_index = next(
+            index for index, x in enumerate(result.x_ft) if x == 10.0
+        )
+        peak_row = [float(value) for value in rows[moment_peak_index + 1]]
+        self.assertAlmostEqual(peak_row[1], result.shear_kips[moment_peak_index])
+        self.assertAlmostEqual(peak_row[2], result.moment_kip_ft[moment_peak_index])
+        self.assertAlmostEqual(peak_row[3], result.deflection_in[moment_peak_index])
 
 
 if __name__ == "__main__":
