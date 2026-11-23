@@ -18,7 +18,9 @@ uniform load. The desktop app supports point loads, partial uniform loads,
 simply supported and cantilever beams, three section choices, and L/360 or
 L/240 deflection limits. Use **File > Save** or **File > Open** to persist and
 restore complete beam cases in versioned JSON files. Use **Export results to
-CSV** to export the sampled x, V, M, and deflection values with units.
+CSV** to export the sampled x, V, M, and deflection values with units. Use
+**Calculation sheet PDF** to create a printable report with the input schedule,
+diagrams, and design checks.
 
 ## Section-property assumptions
 

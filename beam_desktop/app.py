@@ -6,7 +6,6 @@ import tkinter as tk
 from dataclasses import dataclass
 from tkinter import filedialog, messagebox, ttk
 
-import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
@@ -19,7 +18,9 @@ from beam_calculations import (
     UniformLoad,
     analyze_beam,
 )
+from beam_diagrams import draw_beam_diagrams
 from beam_io import export_results_csv, load_beam_case, save_beam_case
+from beam_report import save_calculation_sheet
 
 SUPPORT_CHOICES = {
     "Simply supported": "simple",
@@ -89,6 +90,7 @@ class BeamDesignerApp:
         self.limit_var = tk.StringVar(value="360")
         self.error_var = tk.StringVar()
         self.summary_var = tk.StringVar()
+        self.current_case: BeamCase | None = None
         self.current_result: BeamResults | None = None
 
         self._build_file_menu()
@@ -191,13 +193,22 @@ class BeamDesignerApp:
             font=("Segoe UI", 10, "bold"),
         )
         summary.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        actions = ttk.Frame(self.results)
+        actions.grid(row=0, column=1, sticky="ne", padx=(8, 0))
         self.export_button = ttk.Button(
-            self.results,
+            actions,
             text="Export results to CSV",
             command=self._export_results,
             state="disabled",
         )
-        self.export_button.grid(row=0, column=1, sticky="ne", padx=(8, 0))
+        self.export_button.pack(fill="x", pady=(0, 4))
+        self.report_button = ttk.Button(
+            actions,
+            text="Calculation sheet PDF",
+            command=self._export_calculation_sheet,
+            state="disabled",
+        )
+        self.report_button.pack(fill="x")
         self.figure = Figure(figsize=(10, 7), dpi=100, facecolor="white")
         self.axes = self.figure.subplots(4, 1, sharex=True)
         self.figure.subplots_adjust(
@@ -361,6 +372,32 @@ class BeamDesignerApp:
             "Results exported", "Beam results exported to CSV.", parent=self.root
         )
 
+    def _export_calculation_sheet(self) -> None:
+        case = self.current_case
+        result = self.current_result
+        if case is None or result is None:
+            return
+        path = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="Save calculation sheet",
+            defaultextension=".pdf",
+            filetypes=(("PDF files", "*.pdf"), ("All files", "*.*")),
+        )
+        if not path:
+            return
+        try:
+            save_calculation_sheet(path, case, result)
+        except (OSError, ValueError) as error:
+            messagebox.showerror(
+                "Cannot save calculation sheet", str(error), parent=self.root
+            )
+            return
+        messagebox.showinfo(
+            "Calculation sheet saved",
+            "Calculation sheet saved as PDF.",
+            parent=self.root,
+        )
+
     def _apply_case(self, case: BeamCase) -> None:
         self.support_var.set(SUPPORT_LABELS[case.support])
         self.span_var.set(str(case.span_ft))
@@ -392,8 +429,10 @@ class BeamDesignerApp:
     def _schedule_recalculation(self, _event: tk.Event | None = None) -> None:
         if self.pending_update is not None:
             self.root.after_cancel(self.pending_update)
+        self.current_case = None
         self.current_result = None
         self.export_button.configure(state="disabled")
+        self.report_button.configure(state="disabled")
         self.pending_update = self.root.after(120, self._recalculate)
 
     def _read_case(self) -> BeamCase:
@@ -429,13 +468,17 @@ class BeamDesignerApp:
             case = self._read_case()
             result = analyze_beam(case)
         except (ValueError, KeyError) as error:
+            self.current_case = None
             self.current_result = None
             self.export_button.configure(state="disabled")
+            self.report_button.configure(state="disabled")
             self.error_var.set(str(error) or "Enter valid finite numeric values.")
             return
         self.error_var.set("")
+        self.current_case = case
         self.current_result = result
         self.export_button.configure(state="normal")
+        self.report_button.configure(state="normal")
         section = case.section
         self.properties_label.configure(
             text=(
@@ -462,73 +505,7 @@ class BeamDesignerApp:
         self._draw(case, result)
 
     def _draw(self, case: BeamCase, result: BeamResults) -> None:
-        axes = self.axes
-        for axis in axes:
-            axis.clear()
-            axis.grid(True, color="#e5ebef", linewidth=0.7)
-            axis.tick_params(labelsize=8)
-        span = case.span_ft
-        beam_axis = axes[0]
-        beam_axis.plot([0, span], [0, 0], color="#29495a", linewidth=5)
-        beam_axis.set_title("Beam and applied loads", loc="left", fontsize=10)
-        beam_axis.set_ylim(-1.0, 1.25)
-        beam_axis.set_yticks([])
-        beam_axis.set_xlim(-span * 0.04, span * 1.04)
-        if case.support == "simple":
-            beam_axis.scatter(
-                [0, span], [-0.16, -0.16], marker="^", s=95, color="#566c79", zorder=3
-            )
-            beam_axis.plot([0, span], [-0.27, -0.27], color="#8798a1", linewidth=1)
-        else:
-            beam_axis.axvline(0, color="#566c79", linewidth=5)
-            for y in np.linspace(-0.75, 0.65, 8):
-                beam_axis.plot([-span * 0.025, 0], [y - 0.12, y], color="#8798a1", lw=1)
-        for load in case.loads:
-            if isinstance(load, PointLoad):
-                beam_axis.annotate(
-                    "",
-                    xy=(load.position_ft, 0.06),
-                    xytext=(load.position_ft, 0.72),
-                    arrowprops={"arrowstyle": "-|>", "color": "#176b87", "lw": 1.7},
-                )
-                beam_axis.text(
-                    load.position_ft,
-                    0.78,
-                    f"{load.magnitude_kips:g} k",
-                    ha="center",
-                    fontsize=8,
-                    color="#176b87",
-                )
-            else:
-                positions = np.linspace(load.start_ft, load.end_ft, 11)
-                for position in positions:
-                    beam_axis.annotate(
-                        "",
-                        xy=(position, 0.06),
-                        xytext=(position, 0.58),
-                        arrowprops={"arrowstyle": "-|>", "color": "#176b87", "lw": 1.1},
-                    )
-                beam_axis.text(
-                    (load.start_ft + load.end_ft) / 2,
-                    0.65,
-                    f"{load.magnitude_kip_per_ft:g} k/ft",
-                    ha="center",
-                    fontsize=8,
-                    color="#176b87",
-                )
-        x = result.x_ft
-        data = (
-            (axes[1], result.shear_kips, "Shear", "kips"),
-            (axes[2], result.moment_kip_ft, "Bending moment", "kip-ft"),
-            (axes[3], result.deflection_in, "Deflection", "in"),
-        )
-        for axis, values, title, unit in data:
-            axis.axhline(0, color="#70838d", lw=0.8)
-            axis.plot(x, values, color="#176b87", linewidth=1.8)
-            axis.fill_between(x, values, 0, color="#dceef2", alpha=0.75)
-            axis.set_ylabel(unit, fontsize=8)
-            axis.set_title(title, loc="left", fontsize=9)
-        axes[3].set_xlabel("Position along span (ft)", fontsize=8)
+        draw_beam_diagrams(self.axes, case, result)
         self.figure_canvas.draw_idle()
 
 

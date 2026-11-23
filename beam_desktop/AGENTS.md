@@ -48,6 +48,8 @@ frameworks or build tooling without a clear requirement.
 - Check JSON save/open round trips and ensure malformed files leave the current
   case unchanged.
 - Check CSV exports include unit-bearing headers and every sampled beam point.
+- Check the calculation sheet PDF contains a valid PDF document for the current
+  case.
 - For UI changes, launch `python app.py` and check both support modes, point and
   uniform loads, all sections and both deflection limits, resizing, and visible
   input errors.

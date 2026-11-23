@@ -62,6 +62,12 @@ the beam, including load boundaries, with columns for x (ft), shear V (kips),
 moment M (kip-ft), and deflection (in). The UTF-8 CSV should open correctly in
 Excel.
 
+## Calculation sheet
+
+Provide a button to save the current case as a PDF calculation sheet. List the
+beam inputs and loads at the top, followed by the beam and response diagrams
+and the bending and deflection checks.
+
 ## Look and feel
 
 Clean, professional, resizable desktop window. Place beam inputs in a panel on
@@ -79,5 +85,3 @@ the left and the beam visualization, diagrams, and results on the right.
 
 Continuous beams, buckling, self-weight, and code load combinations. Only the
 listed three section selections are included in the initial desktop catalog.
-
-Calculation sheet: A button that saves the diagrams and checks as a PDF, with the inputs listed at the top, ready to hand in with a design.
